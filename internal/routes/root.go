@@ -8,11 +8,12 @@ import (
 	"github.com/conan194351/BTL-KTPM/internal/repository/impl"
 	"github.com/conan194351/BTL-KTPM/internal/services"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"go.temporal.io/sdk/client"
 	"log"
 )
 
-func InitRoutes() *gin.Engine {
+func InitRoutes(db *gorm.DB) *gin.Engine {
 	cnf := config.GetConfig()
 	gin.SetMode(cnf.App.GetMode())
 	r := gin.New()
@@ -48,6 +49,8 @@ func InitRoutes() *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	AddHealthCheckRouter(v1)
-	AddOrderRouter(v1, orderHandler)
+
+	AddAuthRouter(v1, db)
+	AddProductRouter(v1, db)
 	return r
 }

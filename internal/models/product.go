@@ -11,3 +11,9 @@ type Product struct {
 	ImageURL    string
 	Orders      []Order `gorm:"foreignKey:ProductID"`
 }
+
+func GetAllProducts(db *gorm.DB) ([]Product, error) {
+	var products []Product
+	err := db.Find(&products).Error
+	return products, err
+}
