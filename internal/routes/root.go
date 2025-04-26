@@ -16,5 +16,6 @@ func InitRoutes(db *gorm.DB) *gin.Engine {
 	AddHealthCheckRouter(v1)
 
 	AddAuthRouter(v1, db)
+	AddProductRouter(v1, db)
 	return r
 }
