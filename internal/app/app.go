@@ -2,10 +2,11 @@ package app
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/conan194351/BTL-KTPM/internal/config"
 	"github.com/conan194351/BTL-KTPM/internal/routes"
 	"github.com/conan194351/BTL-KTPM/pkg/logger"
-	"net/http"
 )
 
 type App struct {
@@ -27,7 +28,9 @@ func (app *App) Start() {
 	 |_|\_\  |_|  |_|    |_|  |_|
 	` + "\033[m")
 	app.logger.Info("App is running...", nil)
-	r := routes.InitRoutes()
+	config.InitDatabase()
+	db := config.GetDB()
+	r := routes.InitRoutes(db)
 	addr := config.GetConfig().Server.GetAddr()
 	server := &http.Server{
 		Addr:        addr,
