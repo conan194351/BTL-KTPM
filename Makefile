@@ -4,4 +4,8 @@ dev:
 
 local:
 	export $(shell cat .env) && \
-		go run cmd/server.go
+		go run cmd/server/server.go
+
+worker:
+	export $(shell cat .env) && \
+		go run cmd/worker/worker.go

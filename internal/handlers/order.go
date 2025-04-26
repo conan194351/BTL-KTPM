@@ -33,3 +33,12 @@ func (ah *OrderHandlerImpl) Create(ctx *gin.Context) {
 	}
 	response.SetHttpStatusOK(ctx, http.StatusOK, "", res)
 }
+
+func (ah *OrderHandlerImpl) Test(ctx *gin.Context) {
+	res, err := ah.orderSer.Test(ctx, 2)
+	if err != nil {
+		response.SetHttpStatusError(ctx, errs.ErrInternalServer, err)
+		return
+	}
+	response.SetHttpStatusOK(ctx, http.StatusOK, "", res)
+}

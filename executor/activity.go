@@ -29,7 +29,7 @@ func NewActivities(
 	}
 }
 
-func (a *Activities) verifyOrderActivity(ctx context.Context, orderID uint) (bool, error) {
+func (a *Activities) VerifyOrderActivity(ctx context.Context, orderID uint) (bool, error) {
 	orderDetails, err := a.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
 		return false, err
@@ -63,7 +63,7 @@ func (a *Activities) verifyOrderActivity(ctx context.Context, orderID uint) (boo
 	return true, nil
 }
 
-func (a *Activities) sendOrderConfirmationEmail(ctx context.Context, orderID uint, userID uint) error {
+func (a *Activities) SendOrderConfirmationEmail(ctx context.Context, orderID uint, userID uint) error {
 	user, err := a.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (a *Activities) sendOrderConfirmationEmail(ctx context.Context, orderID uin
 	return nil
 }
 
-func (a *Activities) processPaymentActivity(ctx context.Context, orderID uint) error {
+func (a *Activities) ProcessPaymentActivity(ctx context.Context, orderID uint) error {
 	order, err := a.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
 		return fmt.Errorf("failed to get order: %w", err)
@@ -103,7 +103,7 @@ func (a *Activities) processPaymentActivity(ctx context.Context, orderID uint) e
 	return nil
 }
 
-func (a *Activities) updateInventoryActivity(ctx context.Context, orderID uint) error {
+func (a *Activities) UpdateInventoryActivity(ctx context.Context, orderID uint) error {
 	order, err := a.orderRepo.GetByID(ctx, orderID)
 	if err != nil {
 		return fmt.Errorf("failed to get order: %w", err)
@@ -134,7 +134,7 @@ func (a *Activities) updateInventoryActivity(ctx context.Context, orderID uint) 
 	return nil
 }
 
-func (a *Activities) updateOrderStatusActivity(ctx context.Context, orderID uint, status models.OrderStatus) error {
+func (a *Activities) UpdateOrderStatusActivity(ctx context.Context, orderID uint, status models.OrderStatus) error {
 	if err := a.orderRepo.UpdateOrderStatus(ctx, orderID, status); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}

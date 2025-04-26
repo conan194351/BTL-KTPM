@@ -40,15 +40,11 @@ func (o *OrderWorkflow) OrderWorkflow(ctx workflow.Context, input dto.OrderWorkf
 
 	// Step 1: Authenticate order
 	var verifyResult bool
-	err := workflow.ExecuteActivity(ctx, o.activity.verifyOrderActivity, input.OrderId).Get(ctx, &verifyResult)
-	if err != nil {
-		o.logger.Error(err, "VerifyOrderActivity failed", nil)
-		return nil, err
-	}
-	if !verifyResult {
+	err := workflow.ExecuteActivity(ctx, o.activity.VerifyOrderActivity, input.OrderId).Get(ctx, &verifyResult)
+	if !verifyResult && err != nil {
 		o.logger.Info("Order verification failed", nil)
 
-		err = workflow.ExecuteActivity(ctx, o.activity.updateOrderStatusActivity, input.OrderId, models.VerifyFailed).Get(ctx, nil)
+		err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.VerifyFailed).Get(ctx, nil)
 		if err != nil {
 			o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
 		}
@@ -61,10 +57,10 @@ func (o *OrderWorkflow) OrderWorkflow(ctx workflow.Context, input dto.OrderWorkf
 	}
 
 	// Step 2: Sending mail to confirm
-	err = workflow.ExecuteActivity(ctx, o.activity.sendOrderConfirmationEmail, input.OrderId, input.UserId).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, o.activity.SendOrderConfirmationEmail, input.OrderId, input.UserId).Get(ctx, nil)
 	if err != nil {
 		o.logger.Error(err, "SendOrderConfirmationEmail failed", nil)
-		err = workflow.ExecuteActivity(ctx, o.activity.updateOrderStatusActivity, input.OrderId, models.EmailFailed).Get(ctx, nil)
+		err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.EmailFailed).Get(ctx, nil)
 		if err != nil {
 			o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
 		}
@@ -77,10 +73,10 @@ func (o *OrderWorkflow) OrderWorkflow(ctx workflow.Context, input dto.OrderWorkf
 	}
 
 	// Step 3: Process order payment
-	err = workflow.ExecuteActivity(ctx, o.activity.processPaymentActivity, input.OrderId).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, o.activity.ProcessPaymentActivity, input.OrderId).Get(ctx, nil)
 	if err != nil {
 		o.logger.Error(err, "ProcessPaymentActivity failed", nil)
-		err = workflow.ExecuteActivity(ctx, o.activity.updateOrderStatusActivity, input.OrderId, models.PaymentFailed).Get(ctx, nil)
+		err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.PaymentFailed).Get(ctx, nil)
 		if err != nil {
 			o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
 		}
@@ -93,10 +89,10 @@ func (o *OrderWorkflow) OrderWorkflow(ctx workflow.Context, input dto.OrderWorkf
 	}
 
 	// Step 4: Update inventory
-	err = workflow.ExecuteActivity(ctx, o.activity.updateInventoryActivity, input.OrderId).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, o.activity.UpdateInventoryActivity, input.OrderId).Get(ctx, nil)
 	if err != nil {
 		o.logger.Error(err, "UpdateInventoryActivity failed", nil)
-		err = workflow.ExecuteActivity(ctx, o.activity.updateOrderStatusActivity, input.OrderId, models.InventoryFailed).Get(ctx, nil)
+		err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.InventoryFailed).Get(ctx, nil)
 		if err != nil {
 			o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
 		}

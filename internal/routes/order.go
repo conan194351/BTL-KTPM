@@ -9,5 +9,6 @@ func AddOrderRouter(r *gin.RouterGroup, orderHandler *handlers.OrderHandlerImpl)
 	authRouter := r.Group("/orders")
 	{
 		authRouter.POST("/", orderHandler.Create)
+		authRouter.GET("/", orderHandler.Test)
 	}
 }

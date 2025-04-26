@@ -30,7 +30,7 @@ func (r *orderRepositoryImpl) CreateOrder(ctx context.Context, order *models.Ord
 }
 
 func (r *orderRepositoryImpl) GetByID(ctx context.Context, id uint) (interface{}, error) {
-	var order interface{}
+	var order models.Order
 	err := r.db.WithContext(ctx).First(&order, id).Error
 	return order, err
 }

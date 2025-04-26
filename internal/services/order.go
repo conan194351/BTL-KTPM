@@ -88,3 +88,37 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, req *dto.OderRequest
 	}
 	return response, nil
 }
+
+func (s *OrderServiceImpl) Test(ctx context.Context, orderID uint) (bool, error) {
+	orderDetails, err := s.orderRepo.GetByID(ctx, orderID)
+	if err != nil {
+		return false, err
+	}
+	orderModel, err := utils.ConvertToStruct[models.Order](orderDetails)
+	if err != nil {
+		return false, err
+	}
+	if orderModel.Status != models.Pending {
+		return false, fmt.Errorf("order has invalid status: %s", orderModel.Status)
+	}
+
+	item := orderModel.ProductID
+	product, err := s.productRepo.GetByID(ctx, item)
+	if err != nil {
+		return false, err
+	}
+	productModel, err := utils.ConvertToStruct[models.Product](product)
+	if err != nil {
+		return false, err
+	}
+	if productModel.Stock < 1 {
+		return false, fmt.Errorf("insufficient stock for product %d", item)
+	}
+
+	orderModel.Status = models.Verified
+	orderModel.UpdatedAt = time.Now()
+	if err := s.orderRepo.Update(ctx, orderModel); err != nil {
+		return false, fmt.Errorf("failed to update order status: %w", err)
+	}
+	return true, nil
+}
