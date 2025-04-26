@@ -4,3 +4,4 @@ tmp/
 src/logger
 LICENSE
 /src/guild.txt
+.env

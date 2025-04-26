@@ -11,6 +11,7 @@ type Config struct {
 	App      App      `envPrefix:"APP_"`
 	Server   Server   `envPrefix:"SERVER_"`
 	Database Database `envPrefix:"DATABASE_"`
+	Mail     Mail     `envPrefix:"MAIL_"`
 }
 
 var config Config

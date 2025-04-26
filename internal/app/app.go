@@ -27,6 +27,7 @@ func (app *App) Start() {
 	 |_|\_\  |_|  |_|    |_|  |_|
 	` + "\033[m")
 	app.logger.Info("App is running...", nil)
+	config.InitDatabase()
 	r := routes.InitRoutes()
 	addr := config.GetConfig().Server.GetAddr()
 	server := &http.Server{

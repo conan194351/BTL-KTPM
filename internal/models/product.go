@@ -9,4 +9,5 @@ type Product struct {
 	Price       float64 `gorm:"not null"`
 	Stock       int     `gorm:"not null"`
 	ImageURL    string
+	Orders      []Order `gorm:"foreignKey:ProductID"`
 }

@@ -1,11 +1,13 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/conan194351/BTL-KTPM/internal/handlers"
+	"github.com/gin-gonic/gin"
+)
 
-func AddOrderRouter(r *gin.RouterGroup) {
+func AddOrderRouter(r *gin.RouterGroup, orderHandler *handlers.OrderHandlerImpl) {
 	authRouter := r.Group("/orders")
 	{
-		authRouter.POST("/")
-		authRouter.PUT("/:id")
+		authRouter.POST("/", orderHandler.Create)
 	}
 }
