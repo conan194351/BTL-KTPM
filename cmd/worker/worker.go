@@ -4,6 +4,7 @@ import (
 	"github.com/conan194351/BTL-KTPM/executor"
 	"github.com/conan194351/BTL-KTPM/internal/config"
 	"github.com/conan194351/BTL-KTPM/internal/repository/impl"
+	mail2 "github.com/conan194351/BTL-KTPM/pkg/mail"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"log"
@@ -23,17 +24,21 @@ func main() {
 	}
 	defer temporalClient.Close()
 
+	//Pkg
+	mail := mail2.NewMailService()
+
 	//Repo
 	orderRepo := impl.NewOrderRepository(db)
 	productRepo := impl.NewProductRepository(db)
 	userRepo := impl.NewUserRepository(db)
 
 	//Executor
-	activities := executor.NewActivities(orderRepo, productRepo, userRepo)
+	activities := executor.NewActivities(orderRepo, productRepo, userRepo, mail)
 	workflow := executor.NewOrderWorkflow(activities)
 	w := worker.New(temporalClient, "order-processing-queue", worker.Options{})
 	w.RegisterWorkflow(workflow.OrderWorkflow)
 	w.RegisterActivity(activities.VerifyOrderActivity)
+	w.RegisterActivity(activities.SendOrderConfirmationEmail)
 	w.RegisterActivity(activities.ProcessPaymentActivity)
 	w.RegisterActivity(activities.UpdateInventoryActivity)
 	w.RegisterActivity(activities.UpdateOrderStatusActivity)

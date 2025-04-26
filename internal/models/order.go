@@ -22,4 +22,5 @@ const (
 	InventoryFailed  OrderStatus = "INVENTORY_FAILED"
 	Completed        OrderStatus = "COMPLETED"
 	EmailFailed      OrderStatus = "EMAIL_FAILED"
+	Failed           OrderStatus = "FAILED"
 )

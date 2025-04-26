@@ -7,6 +7,7 @@ import (
 	"github.com/conan194351/BTL-KTPM/internal/dto"
 	"github.com/conan194351/BTL-KTPM/internal/models"
 	"github.com/conan194351/BTL-KTPM/internal/repository/i"
+	"github.com/conan194351/BTL-KTPM/pkg/mail"
 	"github.com/conan194351/BTL-KTPM/pkg/utils"
 	"go.temporal.io/sdk/client"
 	"time"
@@ -18,6 +19,7 @@ type OrderServiceImpl struct {
 	productRepo   i.ProductRepository
 	tempoClient   client.Client
 	orderWorkflow *executor.OrderWorkflow
+	mailSrv       mail.MailService
 }
 
 func NewOrderService(
@@ -26,6 +28,7 @@ func NewOrderService(
 	productRepo i.ProductRepository,
 	tempoClient client.Client,
 	orderWorkflow *executor.OrderWorkflow,
+	mailSrv mail.MailService,
 ) *OrderServiceImpl {
 	return &OrderServiceImpl{
 		orderRepo:     orderRepo,
@@ -33,6 +36,7 @@ func NewOrderService(
 		productRepo:   productRepo,
 		tempoClient:   tempoClient,
 		orderWorkflow: orderWorkflow,
+		mailSrv:       mailSrv,
 	}
 }
 
@@ -64,7 +68,6 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, req *dto.OderRequest
 		return nil, err
 	}
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        fmt.Sprintf("order-workflow-%d", order.ID),
 		TaskQueue: "order-processing-queue",
 	}
 	workflowInput := dto.OrderWorkflowInput{
@@ -89,36 +92,19 @@ func (s *OrderServiceImpl) CreateOrder(ctx context.Context, req *dto.OderRequest
 	return response, nil
 }
 
-func (s *OrderServiceImpl) Test(ctx context.Context, orderID uint) (bool, error) {
-	orderDetails, err := s.orderRepo.GetByID(ctx, orderID)
+func (s *OrderServiceImpl) Test(ctx context.Context, orderID uint, userID uint) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	orderModel, err := utils.ConvertToStruct[models.Order](orderDetails)
+	userModel, err := utils.ConvertToStruct[models.User](user)
 	if err != nil {
-		return false, err
+		return err
 	}
-	if orderModel.Status != models.Pending {
-		return false, fmt.Errorf("order has invalid status: %s", orderModel.Status)
-	}
-
-	item := orderModel.ProductID
-	product, err := s.productRepo.GetByID(ctx, item)
+	emailContent := fmt.Sprintf("Dear %s,\n\nYour order with ID %d has been confirmed.\n\nThank you for your purchase!", userModel.Name, orderID)
+	err = s.mailSrv.SendEmail(userModel.Email, "Order Confirmation", emailContent)
 	if err != nil {
-		return false, err
+		return fmt.Errorf("failed to send confirmation email: %w", err)
 	}
-	productModel, err := utils.ConvertToStruct[models.Product](product)
-	if err != nil {
-		return false, err
-	}
-	if productModel.Stock < 1 {
-		return false, fmt.Errorf("insufficient stock for product %d", item)
-	}
-
-	orderModel.Status = models.Verified
-	orderModel.UpdatedAt = time.Now()
-	if err := s.orderRepo.Update(ctx, orderModel); err != nil {
-		return false, fmt.Errorf("failed to update order status: %w", err)
-	}
-	return true, nil
+	return nil
 }

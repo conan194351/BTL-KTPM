@@ -24,8 +24,8 @@ func CreateUser(db *gorm.DB, user *User) error {
 	return db.Create(user).Error
 }
 
-func FindByUsername(db *gorm.DB, name string) (*User, error) {
+func FindByEmail(db *gorm.DB, email string) (*User, error) {
 	var user User
-	err := db.Where("name = ?", name).First(&user).Error
+	err := db.Where("email = ?", email).First(&user).Error
 	return &user, err
 }

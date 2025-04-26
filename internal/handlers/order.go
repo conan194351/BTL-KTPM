@@ -5,7 +5,9 @@ import (
 	"github.com/conan194351/BTL-KTPM/internal/dto"
 	"github.com/conan194351/BTL-KTPM/internal/dto/response"
 	"github.com/conan194351/BTL-KTPM/internal/errs"
+	"github.com/conan194351/BTL-KTPM/internal/models"
 	"github.com/conan194351/BTL-KTPM/internal/services"
+	"github.com/conan194351/BTL-KTPM/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -21,24 +23,31 @@ func NewOrderHandler(orderSer *services.OrderServiceImpl) *OrderHandlerImpl {
 }
 
 func (ah *OrderHandlerImpl) Create(ctx *gin.Context) {
-	loginReq := dto.OderRequest{}
-	if err := json.NewDecoder(ctx.Request.Body).Decode(&loginReq); err != nil {
+	user := ctx.MustGet("user")
+	userModel, err := utils.ConvertToStruct[models.User](user)
+	if err != nil {
+		response.SetHttpStatusError(ctx, errs.ErrInternalServer, err)
+		return
+	}
+	orderReq := dto.OderRequest{}
+	if err := json.NewDecoder(ctx.Request.Body).Decode(&orderReq); err != nil {
 		response.SetHttpStatusError(ctx, errs.ErrMalformedJSON, err)
 		return
 	}
-	res, err := ah.orderSer.CreateOrder(ctx, &loginReq)
+	orderReq.UserID = userModel.ID
+	res, err := ah.orderSer.CreateOrder(ctx, &orderReq)
 	if err != nil {
-		response.SetHttpStatusError(ctx, errs.ErrInternalServer, err)
+		response.SetHttpStatusError(ctx, errs.ErrInternalServer, err.Error())
 		return
 	}
 	response.SetHttpStatusOK(ctx, http.StatusOK, "", res)
 }
 
 func (ah *OrderHandlerImpl) Test(ctx *gin.Context) {
-	res, err := ah.orderSer.Test(ctx, 2)
+	err := ah.orderSer.Test(ctx, 2, 1)
 	if err != nil {
 		response.SetHttpStatusError(ctx, errs.ErrInternalServer, err)
 		return
 	}
-	response.SetHttpStatusOK(ctx, http.StatusOK, "", res)
+	response.SetHttpStatusOK(ctx, http.StatusOK, "", nil)
 }

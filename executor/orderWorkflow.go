@@ -104,6 +104,21 @@ func (o *OrderWorkflow) OrderWorkflow(ctx workflow.Context, input dto.OrderWorkf
 		}, nil
 	}
 
+	//Step 5: Update order status to completed
+	err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.Completed).Get(ctx, nil)
+	if err != nil {
+		o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
+		err = workflow.ExecuteActivity(ctx, o.activity.UpdateOrderStatusActivity, input.OrderId, models.Failed).Get(ctx, nil)
+		if err != nil {
+			o.logger.Error(err, "UpdateOrderStatusActivity failed", nil)
+		}
+		return &dto.OrderWorkflowResult{
+			OrderID:     input.OrderId,
+			OrderState:  string(models.Failed),
+			ProcessedAt: workflow.Now(ctx),
+		}, nil
+	}
+
 	o.logger.Info("Order workflow completed successfully", nil)
 	return &dto.OrderWorkflowResult{
 		OrderID:     input.OrderId,

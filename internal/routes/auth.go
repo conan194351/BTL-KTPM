@@ -25,7 +25,7 @@ func AddAuthRouter(r *gin.RouterGroup, db *gorm.DB) {
 		}
 
 		// Check username đã tồn tại chưa
-		if _, err := models.FindByUsername(db, user.Name); err == nil {
+		if _, err := models.FindByEmail(db, user.Name); err == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
 			return
 		}
@@ -49,7 +49,7 @@ func AddAuthRouter(r *gin.RouterGroup, db *gorm.DB) {
 			return
 		}
 
-		user, err := models.FindByUsername(db, req.Username)
+		user, err := models.FindByEmail(db, req.Username)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return

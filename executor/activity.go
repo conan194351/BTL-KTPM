@@ -21,11 +21,13 @@ func NewActivities(
 	orderRepo i.OrderRepository,
 	productRepo i.ProductRepository,
 	userRepo i.UserRepository,
+	mail mail.MailService,
 ) *Activities {
 	return &Activities{
 		orderRepo:   orderRepo,
 		productRepo: productRepo,
 		userRepo:    userRepo,
+		mail:        mail,
 	}
 }
 
@@ -72,7 +74,23 @@ func (a *Activities) SendOrderConfirmationEmail(ctx context.Context, orderID uin
 	if err != nil {
 		return err
 	}
-	emailContent := fmt.Sprintf("Dear %s,\n\nYour order with ID %d has been confirmed.\n\nThank you for your purchase!", userModel.Name, orderID)
+	order, err := a.orderRepo.GetByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to get order: %w", err)
+	}
+	orderModel, err := utils.ConvertToStruct[models.Order](order)
+	if err != nil {
+		return fmt.Errorf("failed to convert order: %w", err)
+	}
+	product, err := a.productRepo.GetByID(ctx, orderModel.ProductID)
+	if err != nil {
+		return fmt.Errorf("failed to get product: %w", err)
+	}
+	productModel, err := utils.ConvertToStruct[models.Product](product)
+	if err != nil {
+		return fmt.Errorf("failed to convert product: %w", err)
+	}
+	emailContent := fmt.Sprintf("Dear %s,\n\nYour order is a %s has been confirmed.\n\nThank you for your purchase!", userModel.Name, productModel.Name)
 	err = a.mail.SendEmail(userModel.Email, "Order Confirmation", emailContent)
 	if err != nil {
 		return fmt.Errorf("failed to send confirmation email: %w", err)

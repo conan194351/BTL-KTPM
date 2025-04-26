@@ -7,9 +7,11 @@ import (
 	"github.com/conan194351/BTL-KTPM/internal/middlewares"
 	"github.com/conan194351/BTL-KTPM/internal/repository/impl"
 	"github.com/conan194351/BTL-KTPM/internal/services"
+	jwt2 "github.com/conan194351/BTL-KTPM/pkg/jwt"
+	"github.com/conan194351/BTL-KTPM/pkg/mail"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"go.temporal.io/sdk/client"
+	"gorm.io/gorm"
 	"log"
 )
 
@@ -21,7 +23,6 @@ func InitRoutes(db *gorm.DB) *gin.Engine {
 
 	//DB
 	config.InitDatabase()
-	db := config.GetDB()
 
 	//Temporal
 	temporalClient, err := client.Dial(client.Options{
@@ -30,27 +31,36 @@ func InitRoutes(db *gorm.DB) *gin.Engine {
 	if err != nil {
 		log.Fatalf("Unable to create Temporal client: %v", err)
 	}
-	defer temporalClient.Close()
+
+	//Pkg
+	mailService := mail.NewMailService()
+	jwt := jwt2.NewJWTService()
 
 	//Repo
 	orderRepo := impl.NewOrderRepository(db)
 	productRepo := impl.NewProductRepository(db)
 	userRepo := impl.NewUserRepository(db)
 
+	//Middleware
+	midd := middlewares.NewMiddleware(jwt, userRepo)
+
 	//Executor
-	activities := executor.NewActivities(orderRepo, productRepo, userRepo)
+	activities := executor.NewActivities(orderRepo, productRepo, userRepo, mailService)
 	workflow := executor.NewOrderWorkflow(activities)
 
 	//Service
-	orderService := services.NewOrderService(orderRepo, userRepo, productRepo, temporalClient, workflow)
+	orderService := services.NewOrderService(orderRepo, userRepo, productRepo, temporalClient, workflow, mailService)
 
 	//Handlers
 	orderHandler := handlers.NewOrderHandler(orderService)
 
-	v1 := r.Group("/api/v1")
-	AddHealthCheckRouter(v1)
+	v := r.Group("/api")
+	AddAuthRouter(v, db)
 
-	AddAuthRouter(v1, db)
+	v1 := r.Group("/api/v1")
+	v1.Use(midd.Auth())
+	AddHealthCheckRouter(v1)
 	AddProductRouter(v1, db)
+	AddOrderRouter(v1, orderHandler)
 	return r
 }
